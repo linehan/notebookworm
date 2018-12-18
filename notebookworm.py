@@ -29,7 +29,7 @@ def create_sqlite_database(meta_file, gram_file, sgram_file, database):
         meta_csv  = csv.reader(open(meta_file))
         meta_head = next(meta_csv);
         meta_type = next(meta_csv);
-        meta_arr = [(r[0],r[1],r[2],r[3],r[4],r[5]) for r in meta_csv];
+        meta_arr = [(r[0],r[1],r[2],r[3]) for r in meta_csv];
 
         field_spec = []; 
         field_form = []; 
@@ -116,31 +116,31 @@ def create_sqlite_database(meta_file, gram_file, sgram_file, database):
 	################################################# 
         # sgrams table 
 	################################################# 
-        print("Creating sgrams")
-	c.execute("""
-                CREATE TABLE sgrams (
-                        id       INTEGER, 
-                        text_id  INTEGER, 
-                        freq     INTEGER, 
-                        n        INTEGER, 
-                        gram    TEXT
-                )
-        """);
+        #print("Creating sgrams")
+	#c.execute("""
+                #CREATE TABLE sgrams (
+                        #id       INTEGER, 
+                        #text_id  INTEGER, 
+                        #freq     INTEGER, 
+                        #n        INTEGER, 
+                        #gram    TEXT
+                #)
+        #""");
 
-	# Load CSV into it 
-        gram_csv = csv.reader(open(sgram_file));
-        gram_arr = [(r[0],r[1],r[2],r[3],r[4]) for r in gram_csv];
+	## Load CSV into it 
+        #gram_csv = csv.reader(open(sgram_file));
+        #gram_arr = [(r[0],r[1],r[2],r[3],r[4]) for r in gram_csv];
 
-        print("Populating sgrams")
-	c.executemany("""
-                INSERT INTO sgrams (
-                        id, 
-                        text_id, 
-                        freq, 
-                        n, 
-                        gram
-                ) VALUES (?,?,?,?,?);""", 
-        gram_arr);
+        #print("Populating sgrams")
+	#c.executemany("""
+                #INSERT INTO sgrams (
+                        #id, 
+                        #text_id, 
+                        #freq, 
+                        #n, 
+                        #gram
+                #) VALUES (?,?,?,?,?);""", 
+        #gram_arr);
 
 	################################################# 
         # gram_search table 
@@ -183,7 +183,7 @@ def create_sqlite_database(meta_file, gram_file, sgram_file, database):
                 CREATE VIRTUAL TABLE gram_search 
                 USING fts4 (
                         id, 
-                        """+field_search_create+"""
+                        """+field_search_create+""",
                         freq, 
                         n, 
                         gram
@@ -195,7 +195,7 @@ def create_sqlite_database(meta_file, gram_file, sgram_file, database):
                 INSERT INTO gram_search 
                 SELECT 
                         grams.id, 
-                        """+field_search_insert+"""
+                        """+field_search_insert+""",
                         grams.freq, 
                         grams.n, 
                         grams.gram 
@@ -206,30 +206,30 @@ def create_sqlite_database(meta_file, gram_file, sgram_file, database):
         ######################################################################## 
         ## sgram_search table 
         ######################################################################## 
-        print("Creating sgram_search")
-        c.execute("""
-                CREATE VIRTUAL TABLE sgram_search 
-                USING fts4 (
-                        id, 
-                        """+field_search_create+"""
-                        freq, 
-                        n, 
-                        gram
-                )
-        """)
+        #print("Creating sgram_search")
+        #c.execute("""
+                #CREATE VIRTUAL TABLE sgram_search 
+                #USING fts4 (
+                        #id, 
+                        #"""+field_search_create+"""
+                        #freq, 
+                        #n, 
+                        #gram
+                #)
+        #""")
 
-        print("Populating sgram_search")
-        c.execute("""
-                INSERT INTO sgram_search 
-                SELECT 
-                        sgrams.id, 
-                        """+field_search_insert+"""
-                        sgrams.freq, 
-                        sgrams.n, 
-                        sgrams.gram 
-                FROM sgrams 
-                JOIN texts ON sgrams.text_id = texts.id
-        """);
+        #print("Populating sgram_search")
+        #c.execute("""
+                #INSERT INTO sgram_search 
+                #SELECT 
+                        #sgrams.id, 
+                        #"""+field_search_insert+"""
+                        #sgrams.freq, 
+                        #sgrams.n, 
+                        #sgrams.gram 
+                #FROM sgrams 
+                #JOIN texts ON sgrams.text_id = texts.id
+        #""");
 
         #print("Creating sgram_search")
 	#c.execute("""
@@ -385,6 +385,77 @@ def generate_grams(texts_directory, texts_meta_file, n_vector):
 
         rgrams_csv.close();
         sgrams_csv.close();
+
+
+def generate_grams_2(texts_directory, texts_meta_file, n_vector):
+
+        ####################################################################### 
+        # Configure a tokenizer for the raw grams 
+        ####################################################################### 
+        raw_tok = tokenizer.Tokenizer(
+                use_stopwords          = False,
+                use_lexical_smoothing  = True,        
+                use_stemming           = False,
+                use_pos_tagging        = False,
+                use_standard_stopwords = False, 
+        );
+
+        gram_id = 0;
+
+        rgrams_csv = open("rgrams.csv", "w+");
+
+        text_csv = csv.reader(open(texts_meta_file))
+
+        for row in text_csv:
+                text_id       = row[0];
+                text_filename = row[1];
+                text_path     = texts_directory+"/"+text_filename;
+
+                print("Generating tokenized version of "+text_path);
+
+                text_file = open(text_path);
+
+                rtoks = raw_tok.tokenize(text_file.read());
+
+                raw_file = open(text_path+".raw", "w+");
+
+                raw_file.write(" ".join(rtoks));
+
+                raw_file.close();
+
+                text_file.close();
+
+                for n in n_vector:
+                        print("Generating "+str(n)+"-grams for "+text_path);
+
+                        ################################################# 
+                        # Compute frequencies for raw grams
+                        ################################################# 
+                        rgrams      = nltk.ngrams(rtoks, n)
+                        rgrams_freq = {};
+
+                        for gram_vector in rgrams:
+                                gram = " ".join(gram_vector);
+
+                                if gram in rgrams_freq:
+                                        rgrams_freq[gram] += 1;
+                                else:
+                                        rgrams_freq[gram] = 1;
+
+                        ################################################# 
+                        # Store raw gram frequencies as CSV 
+                        ################################################# 
+                        for item in rgrams_freq.items():
+
+                                gram = item[0];
+                                freq = str(item[1]);
+
+                                rgrams_csv.write(str(gram_id)+","+str(text_id)+","+str(freq)+","+str(n)+","+gram+"\n");
+
+                                gram_id += 1;
+
+        rgrams_csv.close();
+
 		
 
 
@@ -400,11 +471,11 @@ def main(argv):
                 opts, args = getopt.getopt(argv,"c:m:s:",["make-database", "make-gramfile", "text-directory=", "metafile=", "rgramfile=", "sgramfile=", "database="])
 
         except getopt.GetoptError:
-                print "USAGE:\n\twig.py -c <corpus_directory> -m <metadata_csv>"
+                print "USAGE:\n\tbookmoth.py -c <corpus_directory> -m <metadata_csv>"
                 sys.exit(2)
 
         if len(opts) == 0:
-                print "USAGE:\n\twig.py -c <corpus_directory> -m <metadata_csv>"
+                print "USAGE:\n\tbookmoth.py -c <corpus_directory> -m <metadata_csv>"
                 sys.exit(2)
    
         for opt, arg in opts:
@@ -422,7 +493,7 @@ def main(argv):
         if database is not "":
                 create_sqlite_database(meta_file, rgram_file, sgram_file, database);
         else:
-                generate_grams(text_directory, meta_file, [1,2,3,4,5]);
+                generate_grams_2(text_directory, meta_file, [1,2,3,4,5]);
 
 if __name__ == "__main__":
         main(sys.argv[1:])
