@@ -24,4 +24,4 @@ config.status
 
 # Python
 *.pyc
-lib/*/docs/*
+src/lib/*/docs/*
