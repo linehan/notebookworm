@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>Test test</title>
+	<script src="Chart.bundle.js"></script>
+        <script src="../zepto.min.js"></script>
+        <style>
+                body {
+                        background-color:#fafafa;
+                }
+                .page-wrap {
+                        background-color:white;
+                        width:1500px;
+                        margin: 0 auto;
+                        padding:24px;
+                }
+        </style>
+    </head>
+
+    <body>
+        <div class="page-wrap">
+                <h1>ngram frequencies among constitutions of the world</h1>
+                <form>
+                <select id="selectn">
+                        <option>1</option>
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+                </select>
+                <input id="searchbox"></input>
+                <button id="searchbutton">search</button>
+                </form>
+
+                <h2>Frequency of search term in all cases</h2>
+                <canvas id="histogram" width="1200" height="400"></canvas>
+
+                <h2>Frequency of search term by year</h2>
+                <canvas id="histogram2" width="1200" height="400"></canvas>
+                <pre id="caseinfo">
+                </pre>
+                <div id="searchresults">
+                </div>
+        </div>
+
+        <script src="client2.js"></script>
+    </body>
+  
+</html>
